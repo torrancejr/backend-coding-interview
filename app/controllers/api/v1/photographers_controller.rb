@@ -4,14 +4,6 @@ module Api
       before_action :authenticate_optional
 
       # GET /api/v1/photographers
-      #
-      # List photographers with photo counts.
-      #
-      # Query params:
-      #   page     (integer) - page number
-      #   per_page (integer) - items per page
-      #   search   (string)  - search by name
-      #
       def index
         photographers = Photographer.with_photo_count
 
@@ -28,9 +20,6 @@ module Api
       end
 
       # GET /api/v1/photographers/:id
-      #
-      # Returns photographer details with their photos.
-      #
       def show
         photographer = Photographer.includes(:photos).find(params[:id])
 

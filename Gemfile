@@ -25,6 +25,8 @@ group :development, :test do
   gem "faker", "~> 3.2"
   gem "debug", platforms: %i[mri windows]
   gem "dotenv-rails"
+  gem "rubocop", "~> 1.60", require: false
+  gem "brakeman", "~> 6.1", require: false
 end
 
 group :test do

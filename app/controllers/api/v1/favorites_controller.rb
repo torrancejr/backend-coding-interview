@@ -4,13 +4,6 @@ module Api
       before_action :authenticate!
 
       # GET /api/v1/favorites
-      #
-      # List the authenticated user's favorited photos.
-      #
-      # Query params:
-      #   page     (integer) - page number
-      #   per_page (integer) - items per page
-      #
       def index
         favorites = current_user.favorites
                                 .includes(photo: :photographer)

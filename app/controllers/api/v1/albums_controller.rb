@@ -6,9 +6,6 @@ module Api
       before_action :authorize_album!, only: [:update, :destroy, :add_photo, :remove_photo]
 
       # GET /api/v1/albums
-      #
-      # List albums visible to the current user (own + public).
-      #
       def index
         albums = Album.visible_to(current_user)
                       .includes(:owner)
@@ -22,9 +19,6 @@ module Api
       end
 
       # GET /api/v1/albums/:id
-      #
-      # Returns album details with photos.
-      #
       def show
         unless @album.owner == current_user || @album.is_public
           return forbidden
@@ -36,46 +30,32 @@ module Api
       end
 
       # POST /api/v1/albums
-      #
-      # Create a new album.
-      #
-      # Params: name (required), description, is_public
-      #
       def create
         album = current_user.albums.build(album_params)
 
         if album.save
           render json: { album: AlbumSerializer.new(album).as_json }, status: :created
         else
-          render_error("Album creation failed", :unprocessable_entity, details: album.errors.full_messages)
+          render_error("Album creation failed", :unprocessable_content, details: album.errors.full_messages)
         end
       end
 
       # PUT /api/v1/albums/:id
-      #
-      # Update an album. Owner only.
-      #
       def update
         if @album.update(album_params)
           render json: { album: AlbumSerializer.new(@album).as_json }
         else
-          render_error("Album update failed", :unprocessable_entity, details: @album.errors.full_messages)
+          render_error("Album update failed", :unprocessable_content, details: @album.errors.full_messages)
         end
       end
 
       # DELETE /api/v1/albums/:id
-      #
-      # Delete an album. Owner only.
-      #
       def destroy
         @album.destroy!
         head :no_content
       end
 
       # POST /api/v1/albums/:id/photos/:photo_id
-      #
-      # Add a photo to an album. Idempotent.
-      #
       def add_photo
         photo = Photo.find(params[:photo_id])
         @album.photos << photo unless @album.photos.include?(photo)
@@ -83,9 +63,6 @@ module Api
       end
 
       # DELETE /api/v1/albums/:id/photos/:photo_id
-      #
-      # Remove a photo from an album.
-      #
       def remove_photo
         photo = Photo.find(params[:photo_id])
         @album.photos.delete(photo)

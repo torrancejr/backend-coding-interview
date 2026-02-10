@@ -121,7 +121,7 @@ RSpec.describe "Photos API", type: :request do
     it "returns 422 for invalid params" do
       post "/api/v1/photos", params: { width: -1 }, headers: auth_headers(user)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

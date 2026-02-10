@@ -33,7 +33,7 @@ RSpec.describe "Authentication", type: :request do
       it "returns errors for missing fields" do
         post "/api/v1/auth/register", params: { username: "test" }
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         body = JSON.parse(response.body)
         expect(body["error"]["details"]).to be_an(Array)
       end
@@ -41,14 +41,14 @@ RSpec.describe "Authentication", type: :request do
       it "returns errors for password mismatch" do
         post "/api/v1/auth/register", params: valid_params.merge(password_confirmation: "different")
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it "returns errors for duplicate email" do
         create(:user, email: "test@example.com")
         post "/api/v1/auth/register", params: valid_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end
