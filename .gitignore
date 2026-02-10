@@ -1,0 +1,28 @@
+# Rails
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/storage/*
+!/storage/.keep
+
+# Environment variables
+.env
+.env.local
+
+# IDEs and editors
+.byebug_history
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+
+# Test coverage
+/coverage/
+
+# Documentation files (keeping these visible)
+# We want to show our planning docs
+
+# Ignore master key for decrypting credentials and more.
+/config/master.key

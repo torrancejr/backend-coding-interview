@@ -1,0 +1,1442 @@
+---
+openapi: 3.0.3
+info:
+  title: Clever Photos API
+  version: 1.0.0
+  description: >
+    A production-ready RESTful API for photo management built with Ruby on Rails 7.2 and PostgreSQL.
+    
+    
+    **Authentication:** Most endpoints require a JWT access token. Get one by registering or logging in at `/api/v1/auth/register` or `/api/v1/auth/login`.
+    
+    
+    **Rate Limits:** 
+    - Auth endpoints: 5 requests/min per IP
+    - API endpoints: 100 requests/min per user (60/min unauthenticated)
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+components:
+  securitySchemes:
+    bearer_auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from /api/v1/auth/login or /api/v1/auth/register
+paths:
+  "/api/v1/auth/login":
+    post:
+      summary: login
+      tags:
+      - Api::V1::Authentication
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+              - email
+              - password
+            example:
+              email: login@test.com
+              password: password123
+      responses:
+        '200':
+          description: returns tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      bio:
+                        nullable: true
+                      avatar_url:
+                        nullable: true
+                      role:
+                        type: string
+                      photo_count:
+                        type: integer
+                      favorite_count:
+                        type: integer
+                      created_at:
+                        type: string
+                    required:
+                    - id
+                    - username
+                    - email
+                    - bio
+                    - avatar_url
+                    - role
+                    - photo_count
+                    - favorite_count
+                    - created_at
+                  tokens:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      expires_in:
+                        type: integer
+                      token_type:
+                        type: string
+                    required:
+                    - access_token
+                    - refresh_token
+                    - expires_in
+                    - token_type
+                required:
+                - user
+                - tokens
+              example:
+                user:
+                  id: 149
+                  username: mafalda
+                  email: login@test.com
+                  bio:
+                  avatar_url:
+                  role: member
+                  photo_count: 0
+                  favorite_count: 0
+                  created_at: '2026-02-10T18:34:23Z'
+                tokens:
+                  access_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNDksInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.mEIRggSA4HtT9KnrIh2-OJvU0JKIP0zd_Ih3bu2Qik0
+                  refresh_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNDksInR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNzcxMzUzMjYzfQ.YyabES3D8Dh2AOkuataz7YvwvEOldgoGkYIIWP6_zOc
+                  expires_in: 900
+                  token_type: Bearer
+        '401':
+          description: returns 401 for nonexistent email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: Invalid email or password
+                  status: 401
+  "/api/v1/auth/profile":
+    get:
+      summary: profile
+      tags:
+      - Api::V1::Authentication
+      responses:
+        '200':
+          description: returns the user profile when authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      bio:
+                        nullable: true
+                      avatar_url:
+                        nullable: true
+                      role:
+                        type: string
+                      photo_count:
+                        type: integer
+                      favorite_count:
+                        type: integer
+                      created_at:
+                        type: string
+                    required:
+                    - id
+                    - username
+                    - email
+                    - bio
+                    - avatar_url
+                    - role
+                    - photo_count
+                    - favorite_count
+                    - created_at
+                required:
+                - user
+              example:
+                user:
+                  id: 154
+                  username: chanell
+                  email: ozie_bashirian@zieme.test
+                  bio:
+                  avatar_url:
+                  role: member
+                  photo_count: 0
+                  favorite_count: 0
+                  created_at: '2026-02-10T18:34:23Z'
+        '401':
+          description: returns 401 when not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: Missing authorization token
+                  status: 401
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNTQsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.wPBNE7eoTYjoe8eCQ2EHpKs1EwS-4xJY-3pg0NA6Ulk
+  "/api/v1/auth/refresh":
+    post:
+      summary: refresh
+      tags:
+      - Api::V1::Authentication
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+              required:
+              - refresh_token
+            example:
+              refresh_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNTIsInR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNzcxMzUzMjYzfQ.3NWh4m407m1S5F1v15hDVhIox5odXZ4v083VqKx8yh8
+      responses:
+        '200':
+          description: returns new tokens from a valid refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      expires_in:
+                        type: integer
+                      token_type:
+                        type: string
+                    required:
+                    - access_token
+                    - refresh_token
+                    - expires_in
+                    - token_type
+                required:
+                - tokens
+              example:
+                tokens:
+                  access_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNTIsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.tuDPGIMzmhbASYlhdA5LUMYcdGOmaGCw-2VbkdTJL_w
+                  refresh_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNTIsInR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNzcxMzUzMjYzfQ.3NWh4m407m1S5F1v15hDVhIox5odXZ4v083VqKx8yh8
+                  expires_in: 900
+                  token_type: Bearer
+        '401':
+          description: rejects an access token used as refresh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: 'Invalid token type: expected refresh'
+                  status: 401
+  "/api/v1/auth/register":
+    post:
+      summary: register
+      tags:
+      - Api::V1::Authentication
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+              required:
+              - username
+              - email
+              - password
+              - password_confirmation
+            example:
+              username: testuser
+              email: test@example.com
+              password: password123
+              password_confirmation: password123
+      responses:
+        '201':
+          description: creates a user and returns tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+                      bio:
+                        nullable: true
+                      avatar_url:
+                        nullable: true
+                      role:
+                        type: string
+                      photo_count:
+                        type: integer
+                      favorite_count:
+                        type: integer
+                      created_at:
+                        type: string
+                    required:
+                    - id
+                    - username
+                    - email
+                    - bio
+                    - avatar_url
+                    - role
+                    - photo_count
+                    - favorite_count
+                    - created_at
+                  tokens:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+                      expires_in:
+                        type: integer
+                      token_type:
+                        type: string
+                    required:
+                    - access_token
+                    - refresh_token
+                    - expires_in
+                    - token_type
+                required:
+                - user
+                - tokens
+              example:
+                user:
+                  id: 156
+                  username: testuser
+                  email: test@example.com
+                  bio:
+                  avatar_url:
+                  role: member
+                  photo_count: 0
+                  favorite_count: 0
+                  created_at: '2026-02-10T18:34:23Z'
+                tokens:
+                  access_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNTYsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.IbEP4OwKOtFaHb2wwKPrHJFA49pUektjHlZetsYQ2sg
+                  refresh_token: eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNTYsInR5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNzcxMzUzMjYzfQ.yUR5qj10hw5MpoQcf65q1hD-uYA21T_H1rAkFEBro3M
+                  expires_in: 900
+                  token_type: Bearer
+        '422':
+          description: returns errors for missing fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                      details:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                    - message
+                    - status
+                    - details
+                required:
+                - error
+              example:
+                error:
+                  message: Registration failed
+                  status: 422
+                  details:
+                  - Password can't be blank
+                  - Email can't be blank
+                  - Email is invalid
+                  - Password is too short (minimum is 8 characters)
+  "/api/v1/photos":
+    get:
+      summary: index
+      tags:
+      - Api::V1::Photo
+      responses:
+        '200':
+          description: includes is_favorited flag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        pexels_id:
+                          type: integer
+                        width:
+                          type: integer
+                        height:
+                          type: integer
+                        url:
+                          type: string
+                        alt:
+                          type: string
+                        avg_color:
+                          type: string
+                        orientation:
+                          type: string
+                        photographer:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                          required:
+                          - id
+                          - name
+                        src:
+                          type: object
+                          properties:
+                            medium:
+                              type: string
+                            small:
+                              type: string
+                            tiny:
+                              type: string
+                          required:
+                          - medium
+                          - small
+                          - tiny
+                        is_favorited:
+                          type: boolean
+                        created_at:
+                          type: string
+                      required:
+                      - id
+                      - pexels_id
+                      - width
+                      - height
+                      - url
+                      - alt
+                      - avg_color
+                      - orientation
+                      - photographer
+                      - src
+                      - is_favorited
+                      - created_at
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      total_pages:
+                        type: integer
+                      total_count:
+                        type: integer
+                      per_page:
+                        type: integer
+                    required:
+                    - current_page
+                    - total_pages
+                    - total_count
+                    - per_page
+                required:
+                - photos
+                - meta
+              example:
+                photos:
+                - id: 765
+                  pexels_id: 2114
+                  width: 2879
+                  height: 1104
+                  url: http://hermiston.example/talitha.hickle
+                  alt: Voluptas quo praesentium sapiente.
+                  avg_color: "#065E13"
+                  orientation: landscape
+                  photographer:
+                    id: 192
+                    name: The Hon. Laticia Veum
+                  src:
+                    medium: http://skiles.test/wilbert
+                    small: http://bins.test/anya
+                    tiny: http://paucek-gutmann.test/enrique
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:24Z'
+                - id: 764
+                  pexels_id: 2113
+                  width: 3025
+                  height: 1381
+                  url: http://conroy.test/cassaundra
+                  alt: Beatae facere tempora animi.
+                  avg_color: "#BC29D4"
+                  orientation: landscape
+                  photographer:
+                    id: 192
+                    name: The Hon. Laticia Veum
+                  src:
+                    medium: http://murray.test/cristine
+                    small: http://auer.example/simon_morar
+                    tiny: http://conn.test/filiberto_rodriguez
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:24Z'
+                - id: 763
+                  pexels_id: 2112
+                  width: 5617
+                  height: 2232
+                  url: http://thompson-doyle.example/andy
+                  alt: Voluptatum architecto ducimus porro.
+                  avg_color: "#766EA4"
+                  orientation: landscape
+                  photographer:
+                    id: 192
+                    name: The Hon. Laticia Veum
+                  src:
+                    medium: http://dickinson.test/isreal
+                    small: http://sanford.example/quinn
+                    tiny: http://kilback.test/bulah_mertz
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:24Z'
+                - id: 762
+                  pexels_id: 2111
+                  width: 3384
+                  height: 2543
+                  url: http://gorczany-bechtelar.test/katelynn
+                  alt: Ut delectus qui sequi.
+                  avg_color: "#E0BE11"
+                  orientation: landscape
+                  photographer:
+                    id: 192
+                    name: The Hon. Laticia Veum
+                  src:
+                    medium: http://sporer.example/rena_hickle
+                    small: http://bartoletti.example/herschel.ferry
+                    tiny: http://wolff.example/julie.fritsch
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:24Z'
+                - id: 761
+                  pexels_id: 2110
+                  width: 1259
+                  height: 1230
+                  url: http://prosacco.example/kasey.balistreri
+                  alt: Saepe tempore voluptate at.
+                  avg_color: "#22B18C"
+                  orientation: landscape
+                  photographer:
+                    id: 192
+                    name: The Hon. Laticia Veum
+                  src:
+                    medium: http://mosciski.example/jenette
+                    small: http://larson.example/maryland.mosciski
+                    tiny: http://schaefer-barton.example/russell.price
+                  is_favorited: true
+                  created_at: '2026-02-10T18:34:24Z'
+                meta:
+                  current_page: 1
+                  total_pages: 1
+                  total_count: 5
+                  per_page: 20
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNzIsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjR9.JJuq4xIAuEKYZmf0b5AIQHtfLrnz_MaKIqOi7aDXfvI
+      - name: orientation
+        in: query
+        required: false
+        schema:
+          type: string
+        example: landscape
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        example: 1
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+        example: 2
+      - name: photographer
+        in: query
+        required: false
+        schema:
+          type: string
+        example: Special
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+        example: beach sunset
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+        example: "-width"
+    post:
+      summary: create
+      tags:
+      - Api::V1::Photo
+      responses:
+        '201':
+          description: creates a photo when authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      pexels_id:
+                        nullable: true
+                      width:
+                        type: integer
+                      height:
+                        type: integer
+                      url:
+                        type: string
+                      alt:
+                        type: string
+                      avg_color:
+                        nullable: true
+                      orientation:
+                        type: string
+                      photographer:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          pexels_id:
+                            type: integer
+                          name:
+                            type: string
+                          url:
+                            type: string
+                          photo_count:
+                            type: integer
+                          created_at:
+                            type: string
+                        required:
+                        - id
+                        - pexels_id
+                        - name
+                        - url
+                        - photo_count
+                        - created_at
+                      src:
+                        type: object
+                        properties:
+                          original:
+                            nullable: true
+                          large2x:
+                            nullable: true
+                          large:
+                            nullable: true
+                          medium:
+                            nullable: true
+                          small:
+                            nullable: true
+                          portrait:
+                            nullable: true
+                          landscape:
+                            nullable: true
+                          tiny:
+                            nullable: true
+                        required:
+                        - original
+                        - large2x
+                        - large
+                        - medium
+                        - small
+                        - portrait
+                        - landscape
+                        - tiny
+                      is_favorited:
+                        type: boolean
+                      created_at:
+                        type: string
+                      aspect_ratio:
+                        type: string
+                      created_by:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          username:
+                            type: string
+                        required:
+                        - id
+                        - username
+                      updated_at:
+                        type: string
+                    required:
+                    - id
+                    - pexels_id
+                    - width
+                    - height
+                    - url
+                    - alt
+                    - avg_color
+                    - orientation
+                    - photographer
+                    - src
+                    - is_favorited
+                    - created_at
+                    - aspect_ratio
+                    - created_by
+                    - updated_at
+                required:
+                - photo
+              example:
+                photo:
+                  id: 721
+                  pexels_id:
+                  width: 1920
+                  height: 1080
+                  url: https://example.com/photo.jpg
+                  alt: Test photo
+                  avg_color:
+                  orientation: landscape
+                  photographer:
+                    id: 183
+                    pexels_id: 1013
+                    name: Msgr. Verda Legros
+                    url: http://grimes-stokes.example/enrique.terry
+                    photo_count: 6
+                    created_at: '2026-02-10T18:34:23Z'
+                  src:
+                    original:
+                    large2x:
+                    large:
+                    medium:
+                    small:
+                    portrait:
+                    landscape:
+                    tiny:
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:23Z'
+                  aspect_ratio: '16:9'
+                  created_by:
+                    id: 170
+                    username: sandisandi
+                  updated_at: '2026-02-10T18:34:23Z'
+        '401':
+          description: returns 401 when not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: Missing authorization token
+                  status: 401
+        '422':
+          description: returns 422 for invalid params
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                      details:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                    - message
+                    - status
+                    - details
+                required:
+                - error
+              example:
+                error:
+                  message: Photo creation failed
+                  status: 422
+                  details:
+                  - Photographer must exist
+                  - Width must be greater than 0
+                  - Height can't be blank
+                  - Height is not a number
+                  - Url can't be blank
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNzEsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.Rz-NKU1wTWE-VDjTA-bEdh9ikBrLKTo7LZmVdgKoGiw
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                width:
+                  type: string
+                height:
+                  type: string
+                url:
+                  type: string
+                alt:
+                  type: string
+                photographer_id:
+                  type: string
+              required:
+              - width
+              - height
+              - url
+              - alt
+              - photographer_id
+            example:
+              width: '1920'
+              height: '1080'
+              url: https://example.com/photo.jpg
+              alt: Test photo
+              photographer_id: '183'
+  "/api/v1/photos/{id}":
+    delete:
+      summary: destroy
+      tags:
+      - Api::V1::Photo
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNjUsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.Bf1TD-wXgULxpzaOsr6rKS9WHCp1hut-Vz_PVrkDH-g
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 680
+      responses:
+        '204':
+          description: allows the owner to delete
+        '403':
+          description: forbids non-owners from deleting
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: You are not authorized to perform this action
+                  status: 403
+    get:
+      summary: show
+      tags:
+      - Api::V1::Photo
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 999999
+      responses:
+        '200':
+          description: returns full photo details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      pexels_id:
+                        type: integer
+                      width:
+                        type: integer
+                      height:
+                        type: integer
+                      url:
+                        type: string
+                      alt:
+                        type: string
+                      avg_color:
+                        type: string
+                      orientation:
+                        type: string
+                      photographer:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          pexels_id:
+                            type: integer
+                          name:
+                            type: string
+                          url:
+                            type: string
+                          photo_count:
+                            type: integer
+                          created_at:
+                            type: string
+                        required:
+                        - id
+                        - pexels_id
+                        - name
+                        - url
+                        - photo_count
+                        - created_at
+                      src:
+                        type: object
+                        properties:
+                          original:
+                            type: string
+                          large2x:
+                            nullable: true
+                          large:
+                            nullable: true
+                          medium:
+                            type: string
+                          small:
+                            type: string
+                          portrait:
+                            nullable: true
+                          landscape:
+                            nullable: true
+                          tiny:
+                            type: string
+                        required:
+                        - original
+                        - large2x
+                        - large
+                        - medium
+                        - small
+                        - portrait
+                        - landscape
+                        - tiny
+                      is_favorited:
+                        type: boolean
+                      created_at:
+                        type: string
+                      aspect_ratio:
+                        type: string
+                      created_by:
+                        nullable: true
+                      updated_at:
+                        type: string
+                    required:
+                    - id
+                    - pexels_id
+                    - width
+                    - height
+                    - url
+                    - alt
+                    - avg_color
+                    - orientation
+                    - photographer
+                    - src
+                    - is_favorited
+                    - created_at
+                    - aspect_ratio
+                    - created_by
+                    - updated_at
+                required:
+                - photo
+              example:
+                photo:
+                  id: 701
+                  pexels_id: 2051
+                  width: 4578
+                  height: 4687
+                  url: http://sanford.test/kindra
+                  alt: Minima vero iusto fugiat.
+                  avg_color: "#CC66BA"
+                  orientation: portrait
+                  photographer:
+                    id: 180
+                    pexels_id: 1010
+                    name: Miss Dimple VonRueden
+                    url: http://runolfsdottir-stamm.test/williams
+                    photo_count: 5
+                    created_at: '2026-02-10T18:34:23Z'
+                  src:
+                    original: http://conn.test/kelley_bednar
+                    large2x:
+                    large:
+                    medium: http://dickens-herman.test/cassaundra_sawayn
+                    small: http://pacocha.test/leticia
+                    portrait:
+                    landscape:
+                    tiny: http://dach.test/jacinto
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:23Z'
+                  aspect_ratio: '42:43'
+                  created_by:
+                  updated_at: '2026-02-10T18:34:23Z'
+        '404':
+          description: returns 404 for nonexistent photo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: Photo not found
+                  status: 404
+    put:
+      summary: update
+      tags:
+      - Api::V1::Photo
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNjIsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.Ful_DLDsRlrJHk0E8gfKADK3qFtNnOOF5Avkz3YMsXI
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 668
+      responses:
+        '200':
+          description: allows the owner to update
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      pexels_id:
+                        type: integer
+                      width:
+                        type: integer
+                      height:
+                        type: integer
+                      url:
+                        type: string
+                      alt:
+                        type: string
+                      avg_color:
+                        type: string
+                      orientation:
+                        type: string
+                      photographer:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          pexels_id:
+                            type: integer
+                          name:
+                            type: string
+                          url:
+                            type: string
+                          photo_count:
+                            type: integer
+                          created_at:
+                            type: string
+                        required:
+                        - id
+                        - pexels_id
+                        - name
+                        - url
+                        - photo_count
+                        - created_at
+                      src:
+                        type: object
+                        properties:
+                          original:
+                            type: string
+                          large2x:
+                            nullable: true
+                          large:
+                            nullable: true
+                          medium:
+                            type: string
+                          small:
+                            type: string
+                          portrait:
+                            nullable: true
+                          landscape:
+                            nullable: true
+                          tiny:
+                            type: string
+                        required:
+                        - original
+                        - large2x
+                        - large
+                        - medium
+                        - small
+                        - portrait
+                        - landscape
+                        - tiny
+                      is_favorited:
+                        type: boolean
+                      created_at:
+                        type: string
+                      aspect_ratio:
+                        type: string
+                      created_by:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                          username:
+                            type: string
+                        required:
+                        - id
+                        - username
+                      updated_at:
+                        type: string
+                    required:
+                    - id
+                    - pexels_id
+                    - width
+                    - height
+                    - url
+                    - alt
+                    - avg_color
+                    - orientation
+                    - photographer
+                    - src
+                    - is_favorited
+                    - created_at
+                    - aspect_ratio
+                    - created_by
+                    - updated_at
+                required:
+                - photo
+              example:
+                photo:
+                  id: 668
+                  pexels_id: 2018
+                  width: 985
+                  height: 2042
+                  url: http://batz-glover.test/enoch
+                  alt: Updated
+                  avg_color: "#E19224"
+                  orientation: portrait
+                  photographer:
+                    id: 173
+                    pexels_id: 1003
+                    name: Ciera Strosin
+                    url: http://parker-zulauf.example/elliot
+                    photo_count: 6
+                    created_at: '2026-02-10T18:34:23Z'
+                  src:
+                    original: http://langosh-murphy.test/berry
+                    large2x:
+                    large:
+                    medium: http://wintheiser.example/lesley
+                    small: http://crona-okon.example/theo
+                    portrait:
+                    landscape:
+                    tiny: http://beier.test/tiera
+                  is_favorited: false
+                  created_at: '2026-02-10T18:34:23Z'
+                  aspect_ratio: 985:2042
+                  created_by:
+                    id: 162
+                    username: ike_lang
+                  updated_at: '2026-02-10T18:34:23Z'
+        '403':
+          description: forbids non-owners from updating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: You are not authorized to perform this action
+                  status: 403
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                alt:
+                  type: string
+              required:
+              - alt
+            example:
+              alt: Updated
+  "/api/v1/photos/{id}/favorite":
+    post:
+      summary: favorite
+      tags:
+      - Api::V1::Photo
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNjksInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.NzNvMrHa5yfz-uR9gfWlJlnaceUV1Mpy3A4bhDhGkRU
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 696
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties: {}
+            example: {}
+      responses:
+        '200':
+          description: is idempotent (favoriting twice doesn't error)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  photo_id:
+                    type: integer
+                required:
+                - message
+                - photo_id
+              example:
+                message: Photo favorited
+                photo_id: 696
+        '201':
+          description: favorites a photo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  photo_id:
+                    type: integer
+                required:
+                - message
+                - photo_id
+              example:
+                message: Photo favorited
+                photo_id: 691
+  "/api/v1/photos/{id}/unfavorite":
+    delete:
+      summary: unfavorite
+      tags:
+      - Api::V1::Photo
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
+        example: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNjcsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NzA3NDkzNjN9.4Nrr1JG0HD8NQ68d0uhL7kUvrYc2VIVqjL3k_Nd6J18
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 686
+      responses:
+        '200':
+          description: unfavorites a photo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  photo_id:
+                    type: integer
+                required:
+                - message
+                - photo_id
+              example:
+                message: Photo unfavorited
+                photo_id: 686
+        '404':
+          description: returns 404 if not favorited
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: integer
+                    required:
+                    - message
+                    - status
+                required:
+                - error
+              example:
+                error:
+                  message: Photo is not in your favorites
+                  status: 404
