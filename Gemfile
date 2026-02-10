@@ -19,7 +19,7 @@ gem 'ransack', '~> 4.1'      # Search & filtering
 gem 'redis', '~> 5.0'        # Redis client for token blacklist
 
 group :development, :test do
-  gem 'brakeman', '~> 6.1', require: false
+  gem 'brakeman', '~> 8.0', require: false
   gem 'debug', platforms: %i[mri windows]
   gem 'dotenv-rails'
   gem 'factory_bot_rails', '~> 6.4'
