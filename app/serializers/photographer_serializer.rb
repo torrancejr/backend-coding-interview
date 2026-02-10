@@ -22,7 +22,7 @@ class PhotographerSerializer
 
   def photo_count
     # Use preloaded count if available (from .with_photo_count scope)
-    if @photographer.respond_to?(:photo_count) && @photographer.attributes.key?("photo_count")
+    if @photographer.respond_to?(:photo_count) && @photographer.attributes.key?('photo_count')
       @photographer.photo_count
     else
       @photographer.photos.count

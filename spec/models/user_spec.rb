@@ -1,7 +1,7 @@
-require "rails_helper"
+require 'rails_helper'
 
 RSpec.describe User, type: :model do
-  describe "validations" do
+  describe 'validations' do
     subject { build(:user) }
 
     it { should validate_presence_of(:username) }
@@ -11,36 +11,36 @@ RSpec.describe User, type: :model do
     it { should validate_uniqueness_of(:email).case_insensitive }
     it { should validate_length_of(:password).is_at_least(8) }
 
-    it "rejects invalid username formats" do
-      user = build(:user, username: "bad user!")
+    it 'rejects invalid username formats' do
+      user = build(:user, username: 'bad user!')
       expect(user).not_to be_valid
-      expect(user.errors[:username]).to include("only allows letters, numbers, and underscores")
+      expect(user.errors[:username]).to include('only allows letters, numbers, and underscores')
     end
 
-    it "rejects invalid email formats" do
-      user = build(:user, email: "not-an-email")
+    it 'rejects invalid email formats' do
+      user = build(:user, email: 'not-an-email')
       expect(user).not_to be_valid
     end
 
-    it "downcases email before save" do
-      user = create(:user, email: "RYAN@Example.COM")
-      expect(user.email).to eq("ryan@example.com")
+    it 'downcases email before save' do
+      user = create(:user, email: 'RYAN@Example.COM')
+      expect(user.email).to eq('ryan@example.com')
     end
   end
 
-  describe "associations" do
+  describe 'associations' do
     it { should have_many(:photos) }
     it { should have_many(:albums) }
     it { should have_many(:favorites).dependent(:destroy) }
     it { should have_many(:favorited_photos).through(:favorites) }
   end
 
-  describe "roles" do
+  describe 'roles' do
     it { should define_enum_for(:role).with_values(member: 0, admin: 1) }
   end
 
-  describe "#photo_count" do
-    it "returns the number of photos created by the user" do
+  describe '#photo_count' do
+    it 'returns the number of photos created by the user' do
       user = create(:user)
       photographer = create(:photographer)
       create_list(:photo, 3, created_by: user, photographer: photographer)

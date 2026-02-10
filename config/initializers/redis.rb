@@ -7,7 +7,7 @@
 
 begin
   REDIS = Redis.new(
-    url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"),
+    url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'),
     timeout: 1,
     reconnect_attempts: 3
   )
@@ -15,15 +15,19 @@ begin
   # Test connection
   REDIS.ping
 
-  Rails.logger.info "Redis connected successfully"
+  Rails.logger.info 'Redis connected successfully'
 rescue Redis::CannotConnectError => e
   Rails.logger.warn "Redis connection failed: #{e.message}"
-  Rails.logger.warn "Token blacklist will be disabled. Logout will not work properly."
-  
+  Rails.logger.warn 'Token blacklist will be disabled. Logout will not work properly.'
+
   # Create a null object pattern for development without Redis
   REDIS = Object.new
-  def REDIS.method_missing(*args, **kwargs)
+  def REDIS.method_missing(*args, **_kwargs)
     Rails.logger.debug "Redis not available, skipping: #{args.first}"
     nil
+  end
+
+  def REDIS.respond_to_missing?(_method_name, _include_private = false)
+    true
   end
 end

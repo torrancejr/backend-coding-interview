@@ -8,76 +8,70 @@
 # Disable in test environment to avoid interfering with tests
 return if Rails.env.test?
 
-class Rack::Attack
-  ### Configure Cache ###
+module Rack
+  class Attack
+    ### Configure Cache ###
 
-  # Use Rails.cache for storing rate limit data
-  # In production, this should be Redis for better performance
-  Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
+    # Use Rails.cache for storing rate limit data
+    # In production, this should be Redis for better performance
+    Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
 
-  ### Throttle Configuration ###
+    ### Throttle Configuration ###
 
-  # Throttle authentication endpoints (registration, login)
-  # Allow 5 requests per minute per IP address
-  throttle("auth/ip", limit: 5, period: 1.minute) do |req|
-    if req.path.start_with?("/api/v1/auth/register") || req.path.start_with?("/api/v1/auth/login")
-      req.ip
+    # Throttle authentication endpoints (registration, login)
+    # Allow 5 requests per minute per IP address
+    throttle('auth/ip', limit: 5, period: 1.minute) do |req|
+      req.ip if req.path.start_with?('/api/v1/auth/register') || req.path.start_with?('/api/v1/auth/login')
     end
-  end
 
-  # Throttle refresh token endpoint separately
-  # Allow 10 requests per minute per IP (refresh happens more often)
-  throttle("auth/refresh/ip", limit: 10, period: 1.minute) do |req|
-    if req.path.start_with?("/api/v1/auth/refresh") && req.post?
-      req.ip
+    # Throttle refresh token endpoint separately
+    # Allow 10 requests per minute per IP (refresh happens more often)
+    throttle('auth/refresh/ip', limit: 10, period: 1.minute) do |req|
+      req.ip if req.path.start_with?('/api/v1/auth/refresh') && req.post?
     end
-  end
 
-  # Throttle general API requests by authenticated user
-  # Allow 100 requests per minute per user
-  throttle("api/user", limit: 100, period: 1.minute) do |req|
-    if req.path.start_with?("/api/v1/") && req.env["current_user_id"]
-      req.env["current_user_id"]
+    # Throttle general API requests by authenticated user
+    # Allow 100 requests per minute per user
+    throttle('api/user', limit: 100, period: 1.minute) do |req|
+      req.env['current_user_id'] if req.path.start_with?('/api/v1/') && req.env['current_user_id']
     end
-  end
 
-  # Throttle general API requests by IP for unauthenticated requests
-  # Allow 60 requests per minute per IP
-  throttle("api/ip", limit: 60, period: 1.minute) do |req|
-    if req.path.start_with?("/api/v1/")
-      req.ip unless req.env["current_user_id"]
+    # Throttle general API requests by IP for unauthenticated requests
+    # Allow 60 requests per minute per IP
+    throttle('api/ip', limit: 60, period: 1.minute) do |req|
+      req.ip if req.path.start_with?('/api/v1/') && !req.env['current_user_id']
     end
-  end
 
-  ### Custom Response ###
+    ### Custom Response ###
 
-  # Customize the rate limit response
-  self.throttled_responder = lambda do |request|
-    match_data = request.env["rack.attack.match_data"]
-    now = match_data[:epoch_time]
-    retry_after = (match_data[:period] - (now % match_data[:period])).to_i
+    # Customize the rate limit response
+    self.throttled_responder = lambda do |request|
+      match_data = request.env['rack.attack.match_data']
+      now = match_data[:epoch_time]
+      retry_after = (match_data[:period] - (now % match_data[:period])).to_i
 
-    [
-      429, # Too Many Requests
-      {
-        "Content-Type" => "application/json",
-        "Retry-After" => retry_after.to_s
-      },
-      [{
-        error: {
-          message: "Rate limit exceeded. Too many requests.",
-          status: 429,
-          retry_after_seconds: retry_after
-        }
-      }.to_json]
-    ]
-  end
+      [
+        429, # Too Many Requests
+        {
+          'Content-Type' => 'application/json',
+          'Retry-After' => retry_after.to_s
+        },
+        [{
+          error: {
+            message: 'Rate limit exceeded. Too many requests.',
+            status: 429,
+            retry_after_seconds: retry_after
+          }
+        }.to_json]
+      ]
+    end
 
-  ### Logging ###
+    ### Logging ###
 
-  # Log blocked requests
-  ActiveSupport::Notifications.subscribe("throttle.rack_attack") do |_name, _start, _finish, _request_id, payload|
-    req = payload[:request]
-    Rails.logger.warn "[Rate Limit] Throttled #{req.ip} for #{req.path}"
+    # Log blocked requests
+    ActiveSupport::Notifications.subscribe('throttle.rack_attack') do |_name, _start, _finish, _request_id, payload|
+      req = payload[:request]
+      Rails.logger.warn "[Rate Limit] Throttled #{req.ip} for #{req.path}"
+    end
   end
 end

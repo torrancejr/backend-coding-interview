@@ -25,7 +25,7 @@
 class Photo < ApplicationRecord
   # ── Associations ──────────────────────────────────────────────
   belongs_to :photographer
-  belongs_to :created_by, class_name: "User", optional: true
+  belongs_to :created_by, class_name: 'User', optional: true
   has_many :favorites, dependent: :destroy
   has_many :favorited_by_users, through: :favorites, source: :user
   has_and_belongs_to_many :albums
@@ -35,34 +35,36 @@ class Photo < ApplicationRecord
   validates :height, presence: true, numericality: { greater_than: 0 }
   validates :url, presence: true
   validates :pexels_id, uniqueness: true, allow_nil: true
-  validates :avg_color, format: { with: /\A#[0-9A-Fa-f]{6}\z/, message: "must be a valid hex color" }, allow_blank: true
+  validates :avg_color, format: { with: /\A#[0-9A-Fa-f]{6}\z/, message: 'must be a valid hex color' }, allow_blank: true
 
   # ── Scopes ────────────────────────────────────────────────────
-  scope :landscape, -> { where("width > height") }
-  scope :portrait,  -> { where("height > width") }
-  scope :square,    -> { where("width = height") }
+  scope :landscape, -> { where('width > height') }
+  scope :portrait,  -> { where('height > width') }
+  scope :square,    -> { where('width = height') }
   scope :by_color,  ->(color) { where(avg_color: color) }
-  scope :search,    ->(query) { where("alt ILIKE ?", "%#{sanitize_sql_like(query)}%") }
+  scope :search,    ->(query) { where('alt ILIKE ?', "%#{sanitize_sql_like(query)}%") }
 
   # ── Instance Methods ──────────────────────────────────────────
   def orientation
     if width > height
-      "landscape"
+      'landscape'
     elsif height > width
-      "portrait"
+      'portrait'
     else
-      "square"
+      'square'
     end
   end
 
   def aspect_ratio
-    return "1:1" if width == height
+    return '1:1' if width == height
+
     gcd = width.gcd(height)
     "#{width / gcd}:#{height / gcd}"
   end
 
   def favorited_by?(user)
     return false unless user
+
     favorites.exists?(user: user)
   end
 

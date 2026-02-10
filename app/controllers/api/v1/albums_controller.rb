@@ -2,8 +2,8 @@ module Api
   module V1
     class AlbumsController < ApplicationController
       before_action :authenticate!
-      before_action :set_album, only: [:show, :update, :destroy, :add_photo, :remove_photo]
-      before_action :authorize_album!, only: [:update, :destroy, :add_photo, :remove_photo]
+      before_action :set_album, only: %i[show update destroy add_photo remove_photo]
+      before_action :authorize_album!, only: %i[update destroy add_photo remove_photo]
 
       # GET /api/v1/albums
       def index
@@ -20,9 +20,7 @@ module Api
 
       # GET /api/v1/albums/:id
       def show
-        unless @album.owner == current_user || @album.is_public
-          return forbidden
-        end
+        return forbidden unless @album.owner == current_user || @album.is_public
 
         render json: {
           album: AlbumSerializer.new(@album, include_photos: true, current_user: current_user).as_json
@@ -36,7 +34,7 @@ module Api
         if album.save
           render json: { album: AlbumSerializer.new(album).as_json }, status: :created
         else
-          render_error("Album creation failed", :unprocessable_content, details: album.errors.full_messages)
+          render_error('Album creation failed', :unprocessable_content, details: album.errors.full_messages)
         end
       end
 
@@ -45,7 +43,7 @@ module Api
         if @album.update(album_params)
           render json: { album: AlbumSerializer.new(@album).as_json }
         else
-          render_error("Album update failed", :unprocessable_content, details: @album.errors.full_messages)
+          render_error('Album update failed', :unprocessable_content, details: @album.errors.full_messages)
         end
       end
 
@@ -59,14 +57,14 @@ module Api
       def add_photo
         photo = Photo.find(params[:photo_id])
         @album.photos << photo unless @album.photos.include?(photo)
-        render json: { message: "Photo added to album", album_id: @album.id, photo_id: photo.id }, status: :created
+        render json: { message: 'Photo added to album', album_id: @album.id, photo_id: photo.id }, status: :created
       end
 
       # DELETE /api/v1/albums/:id/photos/:photo_id
       def remove_photo
         photo = Photo.find(params[:photo_id])
         @album.photos.delete(photo)
-        render json: { message: "Photo removed from album", album_id: @album.id, photo_id: photo.id }
+        render json: { message: 'Photo removed from album', album_id: @album.id, photo_id: photo.id }
       end
 
       private
@@ -77,6 +75,7 @@ module Api
 
       def authorize_album!
         return if @album.owner == current_user || current_user.admin?
+
         forbidden
       end
 

@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :album do
-    name { Faker::Lorem.words(number: 3).join(" ").titleize }
+    name { Faker::Lorem.words(number: 3).join(' ').titleize }
     description { Faker::Lorem.sentence }
     association :owner, factory: :user
     is_public { false }

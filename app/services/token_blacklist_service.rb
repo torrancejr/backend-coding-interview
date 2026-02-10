@@ -11,7 +11,7 @@
 #   TokenBlacklistService.blacklisted?(token)
 #
 class TokenBlacklistService
-  REDIS_PREFIX = "blacklist:token:"
+  REDIS_PREFIX = 'blacklist:token:'
 
   class << self
     # Add a token to the blacklist
@@ -24,7 +24,7 @@ class TokenBlacklistService
       return false unless redis_available?
 
       key = redis_key(token)
-      REDIS.setex(key, expires_in, "blacklisted")
+      REDIS.setex(key, expires_in, 'blacklisted')
       true
     rescue Redis::BaseError => e
       Rails.logger.error "Failed to blacklist token: #{e.message}"
@@ -52,11 +52,12 @@ class TokenBlacklistService
     # @param expires_in [Integer] Time in seconds to keep the blacklist entry
     # @return [Boolean] true if successfully blacklisted
     #
-    def blacklist_user(user_id, expires_in: 604_800) # 7 days default
+    # 7 days default
+    def blacklist_user(user_id, expires_in: 604_800)
       return false unless redis_available?
 
       key = "#{REDIS_PREFIX}user:#{user_id}"
-      REDIS.setex(key, expires_in, "blacklisted")
+      REDIS.setex(key, expires_in, 'blacklisted')
       true
     rescue Redis::BaseError => e
       Rails.logger.error "Failed to blacklist user: #{e.message}"

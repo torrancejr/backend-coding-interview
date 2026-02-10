@@ -4,13 +4,13 @@ class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordNotFound, with: :not_found
   rescue_from ActiveRecord::RecordInvalid,  with: :unprocessable
   rescue_from ActionController::ParameterMissing, with: :bad_request
-  rescue_from JwtService::DecodeError,      with: :unauthorized
-  rescue_from JwtService::ExpiredToken,      with: :token_expired
+  rescue_from JwtService::DecodeError, with: :unauthorized
+  rescue_from JwtService::ExpiredToken, with: :token_expired
 
   # Logging & Monitoring
   before_action :set_correlation_id
   after_action :add_correlation_id_header
-  
+
   before_action :set_current_user_for_rate_limiting
 
   private
@@ -20,11 +20,11 @@ class ApplicationController < ActionController::API
     token = extract_token
     return unless token
 
-    payload = JwtService.decode(token, expected_type: "access")
-    request.env["current_user_id"] = payload[:user_id]
+    payload = JwtService.decode(token, expected_type: 'access')
+    request.env['current_user_id'] = payload[:user_id]
   rescue JwtService::DecodeError, JwtService::ExpiredToken
     # No user ID for invalid/expired tokens
-    request.env["current_user_id"] = nil
+    request.env['current_user_id'] = nil
   end
 
   # ── Authentication ──────────────────────────────────────────────
@@ -33,23 +33,21 @@ class ApplicationController < ActionController::API
   #
   def authenticate!
     token = extract_token
-    raise JwtService::DecodeError, "Missing authorization token" unless token
+    raise JwtService::DecodeError, 'Missing authorization token' unless token
 
     # Check if token is blacklisted (logged out)
-    if TokenBlacklistService.blacklisted?(token)
-      raise JwtService::DecodeError, "Token has been revoked"
-    end
+    raise JwtService::DecodeError, 'Token has been revoked' if TokenBlacklistService.blacklisted?(token)
 
-    payload = JwtService.decode(token, expected_type: "access")
-    
+    payload = JwtService.decode(token, expected_type: 'access')
+
     # Check if all user's tokens are blacklisted (logout from all devices)
     if TokenBlacklistService.user_blacklisted?(payload[:user_id])
-      raise JwtService::DecodeError, "All sessions have been revoked"
+      raise JwtService::DecodeError, 'All sessions have been revoked'
     end
 
     @current_user = User.find(payload[:user_id])
   rescue ActiveRecord::RecordNotFound
-    render_error("User not found", :unauthorized)
+    render_error('User not found', :unauthorized)
   end
 
   # Optional auth — sets @current_user if token present, but doesn't require it.
@@ -60,20 +58,21 @@ class ApplicationController < ActionController::API
     token = extract_token
     return unless token
 
-    payload = JwtService.decode(token, expected_type: "access")
+    payload = JwtService.decode(token, expected_type: 'access')
     @current_user = User.find_by(id: payload[:user_id])
   rescue JwtService::DecodeError, JwtService::ExpiredToken
     # Silently ignore invalid tokens for optional auth
     @current_user = nil
   end
 
-  def current_user
-    @current_user
-  end
+  attr_reader :current_user
 
   def extract_token
-    header = request.headers["Authorization"]
-    header&.match(/^Bearer\s+(.+)$/)&.captures&.first
+    header = request.headers['Authorization']
+    return unless header
+
+    match = header.match(/^Bearer\s+(.+)$/)
+    match&.captures&.first
   end
 
   # ── Error Responses ─────────────────────────────────────────────
@@ -91,7 +90,7 @@ class ApplicationController < ActionController::API
 
   def unprocessable(exception)
     render_error(
-      "Validation failed",
+      'Validation failed',
       :unprocessable_content,
       details: exception.record.errors.full_messages
     )
@@ -110,7 +109,7 @@ class ApplicationController < ActionController::API
   end
 
   def forbidden
-    render_error("You are not authorized to perform this action", :forbidden)
+    render_error('You are not authorized to perform this action', :forbidden)
   end
 
   # ── Pagination Helpers ──────────────────────────────────────────
@@ -125,14 +124,14 @@ class ApplicationController < ActionController::API
   end
 
   # ── Request Logging ─────────────────────────────────────────────
-  
+
   # Set correlation ID from header or use Rails-generated request ID
   def set_correlation_id
-    @correlation_id = request.headers["X-Request-ID"] || request.request_id
+    @correlation_id = request.headers['X-Request-ID'] || request.request_id
   end
 
   # Add correlation ID to response headers for request tracing
   def add_correlation_id_header
-    response.headers["X-Request-ID"] = @correlation_id if @correlation_id
+    response.headers['X-Request-ID'] = @correlation_id if @correlation_id
   end
 end

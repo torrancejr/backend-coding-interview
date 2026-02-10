@@ -18,7 +18,9 @@ class Photographer < ApplicationRecord
   validates :name, presence: true
 
   # ── Scopes ────────────────────────────────────────────────────
-  scope :with_photo_count, -> { left_joins(:photos).group(:id).select("photographers.*, COUNT(photos.id) AS photo_count") }
+  scope :with_photo_count, lambda {
+    left_joins(:photos).group(:id).select('photographers.*, COUNT(photos.id) AS photo_count')
+  }
 
   def to_s
     name

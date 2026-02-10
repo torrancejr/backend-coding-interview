@@ -8,7 +8,7 @@ module Api
         photographers = Photographer.with_photo_count
 
         if params[:search].present?
-          photographers = photographers.where("name ILIKE ?", "%#{Photographer.sanitize_sql_like(params[:search])}%")
+          photographers = photographers.where('name ILIKE ?', "%#{Photographer.sanitize_sql_like(params[:search])}%")
         end
 
         photographers = photographers.order(:name).page(params[:page]).per(params[:per_page])

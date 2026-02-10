@@ -1,4 +1,4 @@
-require "csv"
+require 'csv'
 
 # Imports photo data from the provided CSV file.
 # Handles:
@@ -24,9 +24,7 @@ class CsvImportService
   end
 
   def call
-    unless File.exist?(file_path)
-      raise ArgumentError, "CSV file not found: #{file_path}"
-    end
+    raise ArgumentError, "CSV file not found: #{file_path}" unless File.exist?(file_path)
 
     log "Importing photos from #{file_path}..."
 
@@ -36,7 +34,7 @@ class CsvImportService
       end
     end
 
-    log "Import complete!"
+    log 'Import complete!'
     log "  Photographers: #{stats[:photographers_created]} created, #{stats[:photographers_found]} existing"
     log "  Photos: #{stats[:photos_created]} created, #{stats[:photos_found]} existing"
     log "  Errors: #{stats[:errors].length}" if stats[:errors].any?
@@ -82,22 +80,22 @@ class CsvImportService
     end
 
     photo = Photo.create!(
-      pexels_id:      row[:id].to_i,
-      width:          row[:width].to_i,
-      height:         row[:height].to_i,
-      url:            row[:url],
-      avg_color:      row[:avg_color],
-      alt:            row[:alt],
-      src_original:   row[:srcoriginal],
-      src_large2x:    row[:srclarge2x],
-      src_large:      row[:srclarge],
-      src_medium:     row[:srcmedium],
-      src_small:      row[:srcsmall],
-      src_portrait:   row[:srcportrait],
-      src_landscape:  row[:srclandscape],
-      src_tiny:       row[:srctiny],
-      photographer:   photographer,
-      created_by:     nil  # CSV imports have no user owner
+      pexels_id: row[:id].to_i,
+      width: row[:width].to_i,
+      height: row[:height].to_i,
+      url: row[:url],
+      avg_color: row[:avg_color],
+      alt: row[:alt],
+      src_original: row[:srcoriginal],
+      src_large2x: row[:srclarge2x],
+      src_large: row[:srclarge],
+      src_medium: row[:srcmedium],
+      src_small: row[:srcsmall],
+      src_portrait: row[:srcportrait],
+      src_landscape: row[:srclandscape],
+      src_tiny: row[:srctiny],
+      photographer: photographer,
+      created_by: nil # CSV imports have no user owner
     )
     stats[:photos_created] += 1
     log "  Created photo: #{photo.pexels_id} - #{photo.alt&.truncate(50)}"
